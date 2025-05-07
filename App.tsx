@@ -1,20 +1,62 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from './src/store/store';
+import { ExchangeScreen } from './src/screens/ExchangeScreen';
+import { FavoritesScreen } from './src/screens/FavoritesScreen';
+import { CryptoScreen } from './src/screens/CryptoScreen';
+import { CustomTabBar } from './src/components/CustomTabBar';
 
-export default function App() {
+const Tab = createBottomTabNavigator();
+
+function Navigation() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#fff',
+        },
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
+      <Tab.Screen 
+        name="Exchange" 
+        component={ExchangeScreen}
+        options={{
+          title: 'Exchange',
+        }}
+      />
+      <Tab.Screen 
+        name="Crypto"
+        component={CryptoScreen}
+        options={{
+          title: 'Crypto',
+        }}
+      />
+      <Tab.Screen 
+        name="Favorites" 
+        component={FavoritesScreen}
+        options={{
+          title: 'Favorites',
+        }}
+      />
+    </Tab.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  return (
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <NavigationContainer>
+          <Navigation />
+        </NavigationContainer>
+      </PersistGate>
+    </Provider>
+  );
+}
