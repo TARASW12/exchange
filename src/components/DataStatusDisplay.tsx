@@ -1,18 +1,18 @@
-import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React from "react";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 
-type Status = 'idle' | 'loading' | 'succeeded' | 'failed';
+type Status = "idle" | "loading" | "succeeded" | "failed";
 
 interface DataStatusDisplayProps {
   status: Status;
   error: string | null;
-  dataLength: number; // Кількість елементів для перевірки на порожній стан
+  dataLength: number;
   loadingComponent?: React.ReactNode;
   errorComponent?: React.ReactNode;
   emptyComponent?: React.ReactNode;
-  children: React.ReactNode; // Компонент для відображення, коли є дані
-  loadingCondition?: 'always' | 'noData'; // Коли показувати завантаження
-  errorCondition?: 'always' | 'noData'; // Коли показувати помилку
+  children: React.ReactNode;
+  loadingCondition?: "always" | "noData";
+  errorCondition?: "always" | "noData";
 }
 
 const DefaultLoadingComponent = () => (
@@ -24,7 +24,7 @@ const DefaultLoadingComponent = () => (
 
 const DefaultErrorComponent = ({ error }: { error: string | null }) => (
   <View style={[styles.container, styles.centered]}>
-    <Text style={styles.errorText}>Error: {error || 'Unknown error'}</Text>
+    <Text style={styles.errorText}>Error: {error || "Unknown error"}</Text>
     <Text style={styles.infoText}>Could not load data.</Text>
   </View>
 );
@@ -43,13 +43,13 @@ export const DataStatusDisplay: React.FC<DataStatusDisplayProps> = ({
   errorComponent = <DefaultErrorComponent error={error} />,
   emptyComponent = <DefaultEmptyComponent />,
   children,
-  loadingCondition = 'noData', // За замовчуванням, показувати завантаження лише якщо немає даних
-  errorCondition = 'noData',   // За замовчуванням, показувати помилку лише якщо немає даних
+  loadingCondition = "noData",
+  errorCondition = "noData",
 }) => {
-
-  // Умови показу повноекранних станів
-  const showLoading = status === 'loading' && (loadingCondition === 'always' || dataLength === 0);
-  const showError = status === 'failed' && (errorCondition === 'always' || dataLength === 0);
+  const showLoading =
+    status === "loading" && (loadingCondition === "always" || dataLength === 0);
+  const showError =
+    status === "failed" && (errorCondition === "always" || dataLength === 0);
 
   if (showLoading) {
     return <>{loadingComponent}</>;
@@ -59,36 +59,33 @@ export const DataStatusDisplay: React.FC<DataStatusDisplayProps> = ({
     return <>{errorComponent}</>;
   }
 
-  // Показувати порожній стан, якщо завантаження/помилка завершились, а даних немає
-  if (status !== 'loading' && status !== 'failed' && dataLength === 0) {
+  if (status !== "loading" && status !== "failed" && dataLength === 0) {
     return <>{emptyComponent}</>;
   }
 
-  // В іншому випадку (є дані, або стан idle/succeeded) показуємо дочірній компонент
   return <>{children}</>;
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: '#f0f0f0', // Батьківський компонент має стилізувати фон
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   infoText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
+    color: "#555",
+    textAlign: "center",
   },
   errorText: {
-    color: 'red',
+    color: "red",
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 5,
   },
-}); 
+});

@@ -1,8 +1,6 @@
-import { createSelector } from 'reselect';
-import { selectRatesMap } from './slices/ratesSlice';
-import { selectFavoriteIds } from './slices/favoritesSlice';
-
-
+import { createSelector } from "reselect";
+import { selectRatesMap } from "./slices/ratesSlice";
+import { selectFavoriteIds } from "./slices/favoritesSlice";
 
 export interface CryptoListItem {
   id: string;
@@ -16,8 +14,12 @@ export interface CryptoListItem {
  */
 export const selectSortedExchangeList = createSelector(
   [selectRatesMap, selectFavoriteIds], // Input selectors
-  (rates, favoriteIds): CryptoListItem[] => { // Result function
-    const data = Object.entries(rates).map(([key, value]) => ({ id: key, rate: value }));
+  (rates, favoriteIds): CryptoListItem[] => {
+    // Result function
+    const data = Object.entries(rates).map(([key, value]) => ({
+      id: key,
+      rate: value,
+    }));
 
     return data.sort((a, b) => {
       const aIsFavorite = favoriteIds.includes(a.id);
@@ -34,15 +36,15 @@ export const selectSortedExchangeList = createSelector(
  * Memoized using reselect.
  */
 export const selectFavoriteCryptoDetailsList = createSelector(
-  [selectRatesMap, selectFavoriteIds], // Input selectors
-  (rates, favoriteIds): CryptoListItem[] => { // Result function
+  [selectRatesMap, selectFavoriteIds],
+  (rates, favoriteIds): CryptoListItem[] => {
     return favoriteIds
-      .map(id => {
+      .map((id) => {
         if (rates[id]) {
           return { id, rate: rates[id] };
         }
         return null;
       })
-      .filter(item => item !== null) as CryptoListItem[];
+      .filter((item) => item !== null) as CryptoListItem[];
   }
 );

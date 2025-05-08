@@ -1,9 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { ApiUtil } from '../../api';
-import { RootState } from '../store';
-import { createSelector } from 'reselect';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { ApiUtil } from "../../api";
+import { RootState } from "../store";
+import { createSelector } from "reselect";
 
-// --- Types for Coin Details ---
 export interface CoinDetail {
   symbol: string;
   name: string;
@@ -20,74 +19,85 @@ interface CoinlayerListSuccessResponse {
 }
 interface CoinlayerListErrorResponse {
   success: false;
-  error: { code: number; type: string; info: string; };
+  error: { code: number; type: string; info: string };
 }
-type CoinlayerListApiResponse = CoinlayerListSuccessResponse | CoinlayerListErrorResponse;
-
+type CoinlayerListApiResponse =
+  | CoinlayerListSuccessResponse
+  | CoinlayerListErrorResponse;
 
 interface CoinListState {
   details: CoinDetailsMap;
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
   timestamp: number | null;
 }
 
 const initialState: CoinListState = {
   details: {},
-  status: 'idle',
+  status: "idle",
   error: null,
   timestamp: null,
 };
 
-
 export const fetchCoinList = createAsyncThunk(
-  'coinList/fetchCoinList',
+  "coinList/fetchCoinList",
   async (_, { rejectWithValue }) => {
     try {
-      const data = await ApiUtil.get<CoinlayerListApiResponse>('/list');
+      const data = await ApiUtil.get<CoinlayerListApiResponse>("/list");
       if (data.success) {
         return { details: data.crypto, timestamp: Date.now() };
       } else {
-        return rejectWithValue(data.error?.info || 'Failed to fetch coin list');
+        return rejectWithValue(data.error?.info || "Failed to fetch coin list");
       }
     } catch (error: any) {
-      if (error.response?.data?.error?.info) return rejectWithValue(error.response.data.error.info);
+      if (error.response?.data?.error?.info)
+        return rejectWithValue(error.response.data.error.info);
       if (error.message) return rejectWithValue(error.message);
-      return rejectWithValue('Unknown error fetching coin list');
+      return rejectWithValue("Unknown error fetching coin list");
     }
   }
 );
 
 // --- Slice Definition ---
 const coinListSlice = createSlice({
-  name: 'coinList',
+  name: "coinList",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchCoinList.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
         state.error = null;
       })
-      .addCase(fetchCoinList.fulfilled, (state, action: PayloadAction<{ details: CoinDetailsMap, timestamp: number }>) => {
-        state.status = 'succeeded';
-        state.details = action.payload.details;
-        state.timestamp = action.payload.timestamp;
-      })
+      .addCase(
+        fetchCoinList.fulfilled,
+        (
+          state,
+          action: PayloadAction<{ details: CoinDetailsMap; timestamp: number }>
+        ) => {
+          state.status = "succeeded";
+          state.details = action.payload.details;
+          state.timestamp = action.payload.timestamp;
+        }
+      )
       .addCase(fetchCoinList.rejected, (state, action) => {
-        state.status = 'failed';
+        state.status = "failed";
         state.error = action.payload as string;
       });
   },
 });
 
 // --- Selectors ---
-export const selectCoinListMap = (state: RootState): CoinDetailsMap => state.coinList.details;
-export const selectCoinListStatus = (state: RootState): 'idle' | 'loading' | 'succeeded' | 'failed' => state.coinList.status;
-export const selectCoinListError = (state: RootState): string | null => state.coinList.error;
-export const selectCoinListTimestamp = (state: RootState): number | null => state.coinList.timestamp;
+export const selectCoinListMap = (state: RootState): CoinDetailsMap =>
+  state.coinList.details;
+export const selectCoinListStatus = (
+  state: RootState
+): "idle" | "loading" | "succeeded" | "failed" => state.coinList.status;
+export const selectCoinListError = (state: RootState): string | null =>
+  state.coinList.error;
+export const selectCoinListTimestamp = (state: RootState): number | null =>
+  state.coinList.timestamp;
 
-// Memoized selector for the array of coin details
 export const selectCoinListArray = createSelector(
   [selectCoinListMap],
   (detailsMap): CoinDetail[] => {
