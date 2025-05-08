@@ -1,32 +1,50 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useAppSelector, useAppDispatch } from '../store/store';
-import { removeFavorite } from '../store/slices/favoritesSlice';
-import { selectRatesStatus } from '../store/slices/ratesSlice';
-import { selectFavoriteCryptoDetailsList } from '../store/selectors';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useState, useCallback } from "react";
+import { View, Text, StyleSheet, FlatList } from "react-native";
+import { useAppSelector, useAppDispatch } from "../store/store";
+import { removeFavorite } from "../store/slices/favoritesSlice";
+import { selectRatesStatus } from "../store/slices/ratesSlice";
+import { selectFavoriteCryptoDetailsList } from "../store/selectors";
+import { AnimatedListItem } from "../components/AnimatedListItem";
+import { ListItemRowContent } from "../components/ListItemRowContent";
+import NoFavoritesComponent from "../components/NoFavorites";
+
+interface ItemBeingRemovedState {
+  key: string | null;
+}
 
 export const FavoritesScreen = () => {
   const dispatch = useAppDispatch();
   const ratesStatus = useAppSelector(selectRatesStatus);
   const favoriteRates = useAppSelector(selectFavoriteCryptoDetailsList);
 
+  const [itemBeingRemoved, setItemBeingRemoved] =
+    useState<ItemBeingRemovedState>({ key: null });
+
+  const handleRemoveFavoriteCallback = useCallback((id: string) => {
+    setItemBeingRemoved({ key: id });
+  }, []);
+
+  const onSwipeOutComplete = useCallback(
+    (key: string) => {
+      dispatch(removeFavorite(key));
+      setItemBeingRemoved({ key: null });
+    },
+    [dispatch]
+  );
+
   if (favoriteRates.length === 0) {
+    return <NoFavoritesComponent />;
+  }
+
+  if (
+    ratesStatus === "loading" &&
+    favoriteRates.some((fr) => fr.rate === undefined || fr.rate === null)
+  ) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <MaterialCommunityIcons name="star-off-outline" size={48} color="#ccc" />
-        <Text style={styles.emptyText}>No favorites yet.</Text>
-        <Text style={styles.emptySubText}>Add some from the Exchange tab!</Text>
+      <View style={[styles.container, styles.centeredLoading]}>
+        <Text style={styles.text}>Loading rate data for favorites...</Text>
       </View>
     );
-  }
-  
-  if (ratesStatus === 'loading' && favoriteRates.some(fr => fr.rate === undefined || fr.rate === null)) {
-      return (
-          <View style={[styles.container, styles.centered]}>
-              <Text style={styles.text}>Loading rate data for favorites...</Text>
-          </View>
-      );
   }
 
   return (
@@ -35,15 +53,19 @@ export const FavoritesScreen = () => {
         data={favoriteRates}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.itemContainer}>
-            <TouchableOpacity onPress={() => dispatch(removeFavorite(item.id))} style={styles.starButton}>
-              <MaterialCommunityIcons name='star' size={24} color='#FFD700' />
-            </TouchableOpacity>
-            <View style={styles.itemDetails}>
-              <Text style={styles.itemSymbol}>{item.id}</Text>
-              <Text style={styles.itemRate}>{item.rate ? item.rate.toFixed(6) + ' USD' : '-'}</Text>
-            </View>
-          </View>
+          <AnimatedListItem
+            itemKey={item.id}
+            isFavorite={true}
+            isNewlyUnfavorited={itemBeingRemoved.key === item.id}
+            onAnimationComplete={onSwipeOutComplete}
+          >
+            <ListItemRowContent
+              id={item.id}
+              rate={item.rate}
+              isFavorite={true}
+              onToggleFavorite={handleRemoveFavoriteCallback}
+            />
+          </AnimatedListItem>
         )}
       />
     </View>
@@ -53,55 +75,21 @@ export const FavoritesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
-  centered: {
+  centeredLoading: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 18,
-    color: '#555',
-    fontWeight: 'bold',
-  },
-  emptySubText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#777',
-    textAlign: 'center',
-  },
-  itemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
-  },
-  starButton: {
-    paddingRight: 12,
-    paddingVertical: 5,
-  },
-  itemDetails: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  itemSymbol: {
+  itemContainer: {},
+  starButton: {},
+  itemDetails: {},
+  itemSymbol: {},
+  itemRate: {},
+  text: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    color: "#555",
   },
-  itemRate: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-   text: {
-    fontSize: 16,
-    color: '#555',
-  },
-}); 
+});

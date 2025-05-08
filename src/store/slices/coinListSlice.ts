@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { ApiUtil } from "../../api";
 import { RootState } from "../store";
 import { createSelector } from "reselect";
+import { DataStatus } from "../../constants";
 
 export interface CoinDetail {
   symbol: string;
@@ -27,14 +28,14 @@ type CoinlayerListApiResponse =
 
 interface CoinListState {
   details: CoinDetailsMap;
-  status: "idle" | "loading" | "succeeded" | "failed";
+  status: DataStatus;
   error: string | null;
   timestamp: number | null;
 }
 
 const initialState: CoinListState = {
   details: {},
-  status: "idle",
+  status: DataStatus.Idle,
   error: null,
   timestamp: null,
 };
@@ -66,7 +67,7 @@ const coinListSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchCoinList.pending, (state) => {
-        state.status = "loading";
+        state.status = DataStatus.Loading;
         state.error = null;
       })
       .addCase(
@@ -75,13 +76,13 @@ const coinListSlice = createSlice({
           state,
           action: PayloadAction<{ details: CoinDetailsMap; timestamp: number }>
         ) => {
-          state.status = "succeeded";
+          state.status = DataStatus.Succeeded;
           state.details = action.payload.details;
           state.timestamp = action.payload.timestamp;
         }
       )
       .addCase(fetchCoinList.rejected, (state, action) => {
-        state.status = "failed";
+        state.status = DataStatus.Failed;
         state.error = action.payload as string;
       });
   },
@@ -90,9 +91,8 @@ const coinListSlice = createSlice({
 // --- Selectors ---
 export const selectCoinListMap = (state: RootState): CoinDetailsMap =>
   state.coinList.details;
-export const selectCoinListStatus = (
-  state: RootState
-): "idle" | "loading" | "succeeded" | "failed" => state.coinList.status;
+export const selectCoinListStatus = (state: RootState): DataStatus =>
+  state.coinList.status;
 export const selectCoinListError = (state: RootState): string | null =>
   state.coinList.error;
 export const selectCoinListTimestamp = (state: RootState): number | null =>

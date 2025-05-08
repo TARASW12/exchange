@@ -4,7 +4,7 @@
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "env": {
-        "EXPO_PUBLIC_COINLAYER_ACCESS_KEY": "9217159e628ae803c055705bcbfa8040",
+        "EXPO_PUBLIC_COINLAYER_ACCESS_KEY": "156d5ce9baf48840b5ae4a875054f614",
         "EXPO_PUBLIC_API_BASE_URL": "https://api.yoursite.com",
         "EXPO_PUBLIC_API_TIMEOUT": "6000"
       }

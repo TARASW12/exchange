@@ -23,7 +23,9 @@
     "react-native-screens": "^4.10.0",
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
-    "reselect": "^5.1.1"
+    "reselect": "^5.1.1",
+    "@react-native-community/netinfo": "11.4.1",
+    "react-native-reanimated": "~3.17.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

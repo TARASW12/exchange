@@ -1,24 +1,48 @@
-import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../store/store';
-import { fetchRates, selectRatesStatus, selectRatesTimestamp } from '../store/slices/ratesSlice';
+import { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../store/store";
+import {
+  fetchRates,
+  selectRatesStatus,
+  selectRatesTimestamp,
+} from "../store/slices/ratesSlice";
+import { useNetworkStatus } from "./useNetworkStatus";
+import { DataStatus } from "../constants";
 
-const REFETCH_INTERVAL = 2 * 60 * 1000;
+const ONE_MINUTE_MS = 60 * 1000;
 
 export const useExchangeRates = (isRefreshing: boolean) => {
   const dispatch = useAppDispatch();
   const status = useAppSelector(selectRatesStatus);
-  const timestamp = useAppSelector(selectRatesTimestamp);
+  const storedTimestampInSeconds = useAppSelector(selectRatesTimestamp);
+  const isOffline = useNetworkStatus();
 
   useEffect(() => {
-    const shouldFetch =
-      status === 'idle' ||
-      status === 'failed' ||
-      (timestamp && (Date.now() - (timestamp * 1000)) > REFETCH_INTERVAL);
-
-    if (shouldFetch && !isRefreshing) {
-      dispatch(fetchRates());
+    if (status === DataStatus.Loading) {
+      return;
     }
 
-  }, [dispatch, status, timestamp, isRefreshing]);
+    if (isOffline) {
+      return;
+    }
 
+    const needsInitialFetch = status === DataStatus.Idle;
+    const needsRetryFetch = status === DataStatus.Failed;
+    const needsRefreshFetch = isRefreshing;
+    const needsStaleDataFetch = (() => {
+      if (status === DataStatus.Succeeded && storedTimestampInSeconds) {
+        const storedTimestampInMilliseconds = storedTimestampInSeconds * 1000;
+        return Date.now() - storedTimestampInMilliseconds > ONE_MINUTE_MS;
+      }
+      return false;
+    })();
+
+    if (
+      needsInitialFetch ||
+      needsRetryFetch ||
+      needsRefreshFetch ||
+      needsStaleDataFetch
+    ) {
+      dispatch(fetchRates());
+    }
+  }, [dispatch, status, storedTimestampInSeconds, isRefreshing, isOffline]);
 };

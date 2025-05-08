@@ -1,18 +1,28 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, RefreshControl } from 'react-native';
-import { useAppSelector } from '../store/store';
+import React, { useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
+} from "react-native";
+import { useAppSelector } from "../store/store";
 import {
   selectCoinListArray,
   selectCoinListStatus,
   selectCoinListError,
   selectCoinListTimestamp,
   fetchCoinList,
-  CoinDetail
-} from '../store/slices/coinListSlice';
-import { useCoinList } from '../hooks/useCoinList';
-import { DataStatusDisplay } from '../components/DataStatusDisplay';
-import { useRefreshHandler } from '../hooks/useRefreshHandler';
-import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+  CoinDetail,
+} from "../store/slices/coinListSlice";
+import { useCoinList } from "../hooks/useCoinList";
+import { DataStatusDisplay } from "../components/DataStatusDisplay";
+import { useRefreshHandler } from "../hooks/useRefreshHandler";
+import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
+import { useNetworkStatus } from "../hooks/useNetworkStatus";
 
 const INITIAL_RENDER_COUNT = 20;
 const RENDER_INCREMENT = 15;
@@ -22,8 +32,13 @@ export const CryptoScreen = () => {
   const fullCoinList = useAppSelector(selectCoinListArray);
   const status = useAppSelector(selectCoinListStatus);
   const error = useAppSelector(selectCoinListError);
+  const isOffline = useNetworkStatus();
 
-  const { displayedItems: displayedCoinList, loadMore: loadMoreItems, hasMore: hasMoreItems } = useInfiniteScroll({
+  const {
+    displayedItems: displayedCoinList,
+    loadMore: loadMoreItems,
+    hasMore: hasMoreItems,
+  } = useInfiniteScroll({
     fullData: fullCoinList,
     status,
     initialCount: INITIAL_RENDER_COUNT,
@@ -34,6 +49,7 @@ export const CryptoScreen = () => {
     onRefreshAction: fetchCoinList,
     timestampSelector: selectCoinListTimestamp,
     throttleDurationMs: ONE_HOUR_MS,
+    checkOnlineStatus: true,
   });
 
   useCoinList(isRefreshing);
@@ -44,13 +60,20 @@ export const CryptoScreen = () => {
         status={status}
         error={error}
         dataLength={fullCoinList.length}
+        isOffline={isOffline}
       >
         <FlatList
           data={displayedCoinList}
           keyExtractor={(item: CoinDetail) => item.symbol}
           renderItem={({ item }: { item: CoinDetail }) => (
             <View style={styles.itemContainer}>
-              <Image source={{ uri: item.icon_url }} style={styles.icon} onError={() => console.log('Failed to load icon:', item.icon_url)} />
+              <Image
+                source={{ uri: item.icon_url }}
+                style={styles.icon}
+                onError={() =>
+                  console.log("Failed to load icon:", item.icon_url)
+                }
+              />
               <View style={styles.textContainer}>
                 <Text style={styles.itemSymbol}>{item.symbol}</Text>
                 <Text style={styles.itemNameFull}>{item.name_full}</Text>
@@ -59,14 +82,25 @@ export const CryptoScreen = () => {
           )}
           onEndReached={loadMoreItems}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={() => 
-            hasMoreItems ? 
-            <ActivityIndicator style={styles.footerLoader} size="small" color="#888" /> : null
+          ListFooterComponent={() =>
+            hasMoreItems ? (
+              <ActivityIndicator
+                style={styles.footerLoader}
+                size="small"
+                color="#888"
+              />
+            ) : null
           }
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={handleRefresh}
+              onRefresh={() => {
+                if (isOffline) {
+                  Alert.alert("Offline", "Cannot refresh data while offline.");
+                } else {
+                  handleRefresh();
+                }
+              }}
               tintColor="#FF9500"
               colors={["#FF9500"]}
             />
@@ -80,55 +114,55 @@ export const CryptoScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   infoText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
+    color: "#555",
+    textAlign: "center",
   },
   errorText: {
-    color: 'red',
+    color: "red",
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 5,
   },
   itemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
+    borderBottomColor: "#e0e0e0",
+    backgroundColor: "#fff",
   },
   icon: {
     width: 40,
     height: 40,
     borderRadius: 20,
     marginRight: 15,
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
   },
   textContainer: {
     flex: 1,
   },
   itemSymbol: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   itemNameFull: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   footerLoader: {
-      marginVertical: 20,
-  }
+    marginVertical: 20,
+  },
 });

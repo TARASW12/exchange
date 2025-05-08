@@ -1,12 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
-
-type Status = "idle" | "loading" | "succeeded" | "failed";
+import { DataStatus } from "../constants";
 
 interface DataStatusDisplayProps {
-  status: Status;
+  status: DataStatus;
   error: string | null;
   dataLength: number;
+  isOffline?: boolean;
   loadingComponent?: React.ReactNode;
   errorComponent?: React.ReactNode;
   emptyComponent?: React.ReactNode;
@@ -35,10 +35,19 @@ const DefaultEmptyComponent = () => (
   </View>
 );
 
+const DefaultOfflineEmptyComponent = () => (
+  <View style={[styles.container, styles.centered]}>
+    <Text style={styles.infoText}>
+      You are offline. No data was previously saved.
+    </Text>
+  </View>
+);
+
 export const DataStatusDisplay: React.FC<DataStatusDisplayProps> = ({
   status,
   error,
   dataLength,
+  isOffline = false,
   loadingComponent = <DefaultLoadingComponent />,
   errorComponent = <DefaultErrorComponent error={error} />,
   emptyComponent = <DefaultEmptyComponent />,
@@ -46,20 +55,30 @@ export const DataStatusDisplay: React.FC<DataStatusDisplayProps> = ({
   loadingCondition = "noData",
   errorCondition = "noData",
 }) => {
-  const showLoading =
-    status === "loading" && (loadingCondition === "always" || dataLength === 0);
-  const showError =
-    status === "failed" && (errorCondition === "always" || dataLength === 0);
+  if (isOffline && dataLength === 0 && status !== DataStatus.Loading) {
+    return <DefaultOfflineEmptyComponent />;
+  }
 
+  const showLoading =
+    status === DataStatus.Loading &&
+    (loadingCondition === "always" || dataLength === 0);
   if (showLoading) {
     return <>{loadingComponent}</>;
   }
+
+  const showError =
+    status === DataStatus.Failed &&
+    (errorCondition === "always" || dataLength === 0);
 
   if (showError) {
     return <>{errorComponent}</>;
   }
 
-  if (status !== "loading" && status !== "failed" && dataLength === 0) {
+  if (
+    status !== DataStatus.Loading &&
+    status !== DataStatus.Failed &&
+    dataLength === 0
+  ) {
     return <>{emptyComponent}</>;
   }
 
